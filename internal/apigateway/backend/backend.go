@@ -31,21 +31,34 @@ func (m *MemoryAPIGatewayBackend) CreateGateway(ctx context.Context, g *model.Ga
 	m.gateways[g.Name] = g
 	return g, nil
 }
+
 func (m *MemoryAPIGatewayBackend) GetGateway(ctx context.Context, name string) (*model.Gateway, error) {
 	m.mu.RLock(); defer m.mu.RUnlock()
 	g, exists := m.gateways[name]
 	if !exists { return nil, ErrNotFound }
 	return g, nil
 }
+
 func (m *MemoryAPIGatewayBackend) ListGateways(ctx context.Context) ([]*model.Gateway, error) {
 	m.mu.RLock(); defer m.mu.RUnlock()
 	result := make([]*model.Gateway, 0, len(m.gateways))
 	for _, g := range m.gateways { result = append(result, g) }
 	return result, nil
 }
+
 func (m *MemoryAPIGatewayBackend) DeleteGateway(ctx context.Context, name string) error {
 	m.mu.Lock(); defer m.mu.Unlock()
 	delete(m.gateways, name)
 	return nil
 }
+
+func (m *MemoryAPIGatewayBackend) UpdateGateway(ctx context.Context, name string, g *model.Gateway) (*model.Gateway, error) {
+	m.mu.Lock(); defer m.mu.Unlock()
+	existing, exists := m.gateways[name]
+	if !exists { return nil, ErrNotFound }
+	if g.APIConfig != "" { existing.APIConfig = g.APIConfig }
+	if g.DisplayName != "" { existing.DisplayName = g.DisplayName }
+	return existing, nil
+}
+
 func (m *MemoryAPIGatewayBackend) Shutdown() error { return nil }

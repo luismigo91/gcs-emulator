@@ -39,6 +39,7 @@ type Handler struct {
 	HasAssetInventory   bool
 	HasServiceDirectory bool
 	HasCDN              bool
+	HasAPIGateway       bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +98,9 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasCDN {
 		services["cdn"] = "available"
+	}
+	if h.HasAPIGateway {
+		services["apigateway"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{

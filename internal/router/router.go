@@ -44,6 +44,8 @@ import (
 	sdbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/servicedirectory/backend"
 	cdnapi "github.com/luismiguelgilolivert/gcs-emulator/internal/cdn/api"
 	cdnbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/cdn/backend"
+	agapi "github.com/luismiguelgilolivert/gcs-emulator/internal/apigateway/api"
+	agbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/apigateway/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
 )
 
@@ -194,12 +196,17 @@ func NewWithConfig(cfg RouterConfig) http.Handler {
 	mux.Handle("/v1/projects/{project}/triggers/{trigger}", cb)
 	h.HasCloudBuild = true
 
+	// --- Cloud CDN routes ---
+	cdn := &cdnapi.Handler{Backend: cdnbackend.NewMemoryCDNBackend()}
+	mux.Handle("/compute/v1/projects/", cdn)
+	h.HasCDN = true
+
 	// --- Cloud Billing routes ---
 	bl := &billingapi.Handler{Backend: billingbackend.NewMemoryBillingBackend()}
 	mux.Handle("/v1/billingAccounts/", bl)
 	h.HasBilling = true
 
-	// --- Cloud Asset Inventory routes ---
+	// --- Asset Inventory routes ---
 	al := &assetapi.Handler{Backend: assetbackend.NewMemoryAssetBackend()}
 	mux.Handle("/v1/assets", al)
 	h.HasAssetInventory = true
@@ -210,10 +217,11 @@ func NewWithConfig(cfg RouterConfig) http.Handler {
 	mux.Handle("/v1/projects/{project}/locations/{location}/namespaces/{namespace}", sd)
 	h.HasServiceDirectory = true
 
-	// --- Cloud CDN routes ---
-	cdn := &cdnapi.Handler{Backend: cdnbackend.NewMemoryCDNBackend()}
-	mux.Handle("/compute/v1/projects/", cdn)
-	h.HasCDN = true
+	// --- API Gateway routes ---
+	ag := &agapi.Handler{Backend: agbackend.NewMemoryAPIGatewayBackend()}
+	mux.Handle("/v1/projects/{project}/locations/{location}/gateways", ag)
+	mux.Handle("/v1/projects/{project}/locations/{location}/gateways/{gateway}", ag)
+	h.HasAPIGateway = true
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}
@@ -223,7 +231,7 @@ func NewWithConfig(cfg RouterConfig) http.Handler {
 	if cfg.KMS != nil { svcList = append(svcList, "kms") }
 	if cfg.Logging != nil { svcList = append(svcList, "logging") }
 	if cfg.Monitoring != nil { svcList = append(svcList, "monitoring") }
-	svcList = append(svcList, "errorreporting", "scheduler", "iam", "trace", "bigquery", "dns", "artifactregistry", "cloudbuild", "billing", "cdn", "servicedirectory")
+	svcList = append(svcList, "errorreporting", "scheduler", "iam", "trace", "bigquery", "dns", "artifactregistry", "cloudbuild", "billing", "cdn", "apigateway", "servicedirectory")
 
 	mux.HandleFunc("/-/health", h.HealthHandler)
 	mux.HandleFunc("/-/", admin.DashboardHandler(svcList, func() map[string]interface{} {
