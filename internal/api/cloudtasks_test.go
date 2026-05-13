@@ -19,7 +19,7 @@ func newCloudTasksTestServer(t *testing.T) *httptest.Server {
 	psb := pubsub.NewMemoryPubSubBackend()
 	smb := secretmanager.NewMemorySecretManagerBackend()
 	ctb := tasksbackend.NewMemoryCloudTasksBackend()
-	mux := router.New(b, psb, smb, ctb, nil, nil, "test-project")
+	mux := router.New(b, psb, smb, ctb, nil, nil, nil, "test-project")
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	return srv

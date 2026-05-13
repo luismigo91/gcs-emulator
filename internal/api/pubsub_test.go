@@ -18,7 +18,7 @@ func newPubSubTestServer(t *testing.T) (*httptest.Server, pubsub.PubSubBackend) 
 	t.Helper()
 	b := backend.NewMemoryBackend()
 	psb := pubsub.NewMemoryPubSubBackend()
-	mux := router.New(b, psb, nil, nil, nil, nil, "test-project")
+	mux := router.New(b, psb, nil, nil, nil, nil, nil, "test-project")
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	return srv, psb

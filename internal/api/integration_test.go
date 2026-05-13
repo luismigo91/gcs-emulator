@@ -21,7 +21,7 @@ import (
 func newTestServer(t *testing.T) (*httptest.Server, backend.Backend) {
 	t.Helper()
 	b := backend.NewMemoryBackend()
-	mux := router.New(b, nil, nil, nil, nil, nil, "test-project")
+	mux := router.New(b, nil, nil, nil, nil, nil, nil, "test-project")
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	return srv, b

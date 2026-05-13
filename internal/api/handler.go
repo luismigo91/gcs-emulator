@@ -20,12 +20,13 @@ import (
 )
 
 type Handler struct {
-	Backend        backend.Backend
-	DefaultProject string
-	PubSub         pubsub.PubSubBackend
-	HasCloudTasks  bool
-	HasKMS         bool
-	HasLogging     bool
+	Backend         backend.Backend
+	DefaultProject  string
+	PubSub          pubsub.PubSubBackend
+	HasCloudTasks   bool
+	HasKMS          bool
+	HasLogging      bool
+	HasMonitoring   bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -45,6 +46,9 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasLogging {
 		services["logging"] = "available"
+	}
+	if h.HasMonitoring {
+		services["monitoring"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
