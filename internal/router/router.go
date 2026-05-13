@@ -93,13 +93,29 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	}
 
 	// --- Admin & Health ---
-	mux.HandleFunc("/-/health", h.HealthHandler)
-
 	svcList := []string{"gcs"}
 	if psb != nil { svcList = append(svcList, "pubsub") }
 	if smb != nil { svcList = append(svcList, "secretmanager") }
 	if ctb != nil { svcList = append(svcList, "cloudtasks") }
 	if kmb != nil { svcList = append(svcList, "kms") }
+
+	mux.HandleFunc("/-/health", h.HealthHandler)
+	mux.HandleFunc("/-/", admin.DashboardHandler(svcList, func() map[string]interface{} {
+		stats := map[string]interface{}{}
+		if b != nil {
+			buckets, _ := b.ListBuckets(nil, backend.ListBucketsParams{})
+			stats["Buckets"] = len(buckets)
+		}
+		if psb != nil {
+			topics, _, _ := psb.ListTopics(nil, defaultProject, 0, "")
+			stats["PubSub Topics"] = len(topics)
+		}
+		if smb != nil {
+			secrets, _ := smb.ListSecrets(nil, defaultProject)
+			stats["Secrets"] = len(secrets)
+		}
+		return stats
+	}))
 	mux.HandleFunc("/__/services", admin.ServicesHandler(svcList))
 
 	mux.HandleFunc("/oauth2/v4/token", auth.TokenHandler)
