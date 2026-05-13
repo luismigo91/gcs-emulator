@@ -1,156 +1,134 @@
-# GCS Emulator
+# GCP Emulator
 
-A lightweight, high-performance Google Cloud Storage emulator written in Go. Inspired by [Floci](https://github.com/floci) for AWS.
+[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go)](https://go.dev)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/docker-~15MB-2496ED?logo=docker)](https://hub.docker.com)
 
-## Overview
+A lightweight, zero-dependency **multi-service GCP emulator** for local development. Run GCS, Pub/Sub, Secret Manager, Cloud Tasks, and Cloud KMS — all in a single **15MB binary**, no credentials required.
 
-GCS Emulator provides a local development environment that mimics Google Cloud Storage, allowing you to develop and test cloud-dependent applications without needing actual GCP credentials or incurring costs.
+## Services
 
-## Features
-
-- **Full GCS API emulation**: Both JSON API (`storage/v1`) and XML API
-- **Multiple storage modes**: Memory, Persistent, Hybrid (async flush), and WAL (write-ahead log)
-- **Multi-project isolation**: Resources scoped by `GOOGLE_CLOUD_PROJECT`
-- **SDK compatible**: Works with official Google Cloud SDKs (Go, Python, Node.js, Java)
-- **Docker-first**: Single Docker image (~15-20MB) with `docker compose` support
-- **Go library API**: Importable package for programmatic server control in tests
-- **No credentials required**: Accepts any credentials, perfect for local development
+| Service | API Prefix | Endpoints |
+|---------|-----------|-----------|
+| **Cloud Storage** | `/storage/v1/` | Buckets, objects, uploads, ACLs, IAM, lifecycle, CORS, notifications, compose, copy, rewrite |
+| **Pub/Sub** | `/v1/projects/{p}/topics/` | Topics, subscriptions, publish, pull, ack, schemas, dead letter, message filtering |
+| **Secret Manager** | `/v1/projects/{p}/secrets/` | Secrets CRUD, versions, access, lifecycle |
+| **Cloud Tasks** | `/v2/projects/{p}/locations/{l}/queues/` | Queues CRUD, tasks, auto HTTP dispatch |
+| **Cloud KMS** | `/v1/projects/{p}/locations/{l}/keyRings/` | Key rings, crypto keys, versions, encrypt/decrypt |
 
 ## Quick Start
 
-### Using Docker
-
 ```bash
-docker-compose up -d
-```
+# Homebrew
+brew install luismiguelgilolivert/tap/gcs-emulator
 
-The emulator will be available at `http://localhost:9090`.
+# Docker
+docker compose up -d
 
-### Using Go
+# Go install
+go install github.com/luismiguelgilolivert/gcs-emulator/cmd/server@latest
 
-```bash
+# Go run
 go run ./cmd/server
 ```
 
-### Using Make
+Server starts at `http://localhost:9090`.
 
-```bash
-make run
-```
+## Usage Examples
 
-## SDK Usage Examples
-
-### Go
+### Go SDK
 
 ```go
-import (
-    "cloud.google.com/go/storage"
-    "google.golang.org/api/option"
-)
+// GCS
+storage.NewClient(ctx, option.WithEndpoint("http://localhost:9090/storage/v1/"), option.WithoutAuthentication())
 
-client, err := storage.NewClient(ctx,
-    option.WithEndpoint("http://localhost:9090/storage/v1/"),
-    option.WithoutAuthentication(),
-)
+// Pub/Sub
+pubsub.NewClient(ctx, "test-project", option.WithEndpoint("http://localhost:9090/v1/"), option.WithoutAuthentication())
 ```
 
 ### Python
 
 ```python
-from google.cloud import storage
+from google.cloud import storage, secretmanager
 
-client = storage.Client(
-    project="test-project",
-    client_options={"api_endpoint": "http://localhost:9090"}
-)
+storage_client = storage.Client(project="test-project", client_options={"api_endpoint": "http://localhost:9090"})
+secret_client = secretmanager.SecretManagerServiceClient(client_options={"api_endpoint": "http://localhost:9090"})
 ```
 
 ### Node.js
 
 ```javascript
 const { Storage } = require('@google-cloud/storage');
-
-const storage = new Storage({
-  apiEndpoint: 'http://localhost:9090',
-  projectId: 'test-project',
-  credentials: {
-    client_email: 'test@test.iam.gserviceaccount.com',
-    private_key: 'test',
-  },
-});
+const storage = new Storage({ apiEndpoint: 'http://localhost:9090', projectId: 'test-project' });
 ```
 
-### Java
+### curl
 
-```java
-Storage storage = StorageOptions.newBuilder()
-    .setHost("http://localhost:9090")
-    .setProjectId("test-project")
-    .build()
-    .getService();
+```bash
+# Health check
+curl http://localhost:9090/-/health
+
+# Create bucket
+curl -X POST http://localhost:9090/storage/v1/b -H "Content-Type: application/json" -d '{"name":"my-bucket"}'
+
+# Upload object
+curl -X POST "http://localhost:9090/upload/storage/v1/b/my-bucket/o?name=hello.txt" -d "Hello World"
+
+# Create Pub/Sub topic
+curl -X PUT http://localhost:9090/v1/projects/test-project/topics/demo-topic -d '{"name":"projects/test-project/topics/demo-topic"}'
+
+# Create secret
+curl -X POST "http://localhost:9090/v1/projects/test-project/secrets?secretId=my-secret" -d '{"replication":{"automatic":{}}}'
 ```
 
 ## Configuration
 
-All configuration is via environment variables with `GCP_EMULATOR_` prefix:
-
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `GCP_EMULATOR_PORT` | `9090` | Port to listen on |
+| `GCP_EMULATOR_PORT` | `9090` | Listening port |
 | `GCP_EMULATOR_DEFAULT_PROJECT` | `test-project` | Default project ID |
-| `GCP_EMULATOR_STORAGE_MODE` | `memory` | Storage mode: `memory`, `persistent`, `hybrid`, `wal` |
+| `GCP_EMULATOR_STORAGE_MODE` | `memory` | `memory`, `persistent`, `hybrid`, `wal` |
 | `GCP_EMULATOR_STORAGE_PATH` | `./data` | Path for persistent storage |
 | `GCP_EMULATOR_FLUSH_INTERVAL` | `5s` | Flush interval for hybrid mode |
-
-### Per-Service Overrides
-
-You can override storage mode per service:
-
-```bash
-GCP_EMULATOR_SERVICE_GCS=mode:wal
-GCP_EMULATOR_SERVICE_GCS=path:/data/gcs
-```
-
-## Project Structure
-
-```
-gcs-emulator/
-├── cmd/server/          # CLI entry point
-├── internal/
-│   ├── api/             # HTTP handlers
-│   ├── backend/         # Storage backends
-│   ├── config/          # Configuration
-│   ├── model/           # Domain models
-│   └── router/          # HTTP router
-├── pkg/emulator/        # Public Go library API
-└── tests/               # Test files
-```
+| `GCP_EMULATOR_PUBSUB_MODE` | `memory` | Pub/Sub storage mode |
+| `GCP_EMULATOR_PUBSUB_PATH` | `./data/pubsub` | Pub/Sub storage path |
+| `GCP_EMULATOR_SEED_PATH` | `/data` | Directory to preload on startup |
 
 ## Storage Modes
 
-- **Memory**: Ephemeral, fastest, data lost on restart
-- **Persistent**: JSON files on disk, save/load on shutdown/startup
-- **Hybrid**: In-memory with async flush to disk (default 5s interval)
-- **WAL**: Write-ahead log with compaction for maximum durability
+- **Memory**: Fastest, ephemeral
+- **Persistent**: JSON + blobs on disk, survives restarts
+- **Hybrid**: In-memory with async flush to disk
+- **WAL**: Write-ahead log with compaction, maximum durability
 
-## Contributing
+## Architecture
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+```
+gcs-emulator/
+├── cmd/server/           # Binary entry point (5 services)
+├── internal/
+│   ├── api/              # GCS HTTP handlers
+│   ├── backend/          # GCS storage backends
+│   ├── auth/             # OAuth2 token endpoint
+│   ├── pubsub/           # Pub/Sub (api, backend, model)
+│   ├── secretmanager/    # Secret Manager
+│   ├── cloudtasks/       # Cloud Tasks
+│   ├── kms/              # Cloud KMS
+│   ├── admin/            # /__/services, health
+│   ├── metrics/          # Prometheus endpoint
+│   ├── router/           # HTTP routing (all services)
+│   └── config/           # Environment config
+├── pkg/emulator/         # Programmatic server API
+└── tests/                # Python + Node.js SDK tests
+```
 
-### Development
+## Development
 
 ```bash
-# Build
-make build
-
-# Run tests
-make test
-
-# Run linter
-make lint
-
-# Build Docker image
-make docker-build
+make build      # Build binary
+make test       # Run tests with race detection
+make lint       # Run linter
+make docker-build  # Build Docker image
 ```
 
 ## License
