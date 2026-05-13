@@ -24,6 +24,8 @@ import (
 	monitoringbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/monitoring/backend"
 	schedulerapi "github.com/luismiguelgilolivert/gcs-emulator/internal/scheduler/api"
 	schedulerbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/scheduler/backend"
+	iamapi "github.com/luismiguelgilolivert/gcs-emulator/internal/iam/api"
+	iambackend "github.com/luismiguelgilolivert/gcs-emulator/internal/iam/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
 )
 
@@ -128,6 +130,12 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	mux.Handle("/v1/projects/{project}/locations/{location}/jobs", sc)
 	mux.Handle("/v1/projects/{project}/locations/{location}/jobs/{job}", sc)
 	h.HasScheduler = true
+
+	// --- IAM routes ---
+	ia := &iamapi.Handler{Backend: iambackend.NewMemoryIAMBackend()}
+	mux.Handle("/v1/projects/{project}/serviceAccounts", ia)
+	mux.Handle("/v1/projects/{project}/serviceAccounts/{serviceAccount}", ia)
+	h.HasIAM = true
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}
