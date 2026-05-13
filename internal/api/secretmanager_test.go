@@ -17,7 +17,7 @@ func newSecretManagerTestServer(t *testing.T) *httptest.Server {
 	b := backend.NewMemoryBackend()
 	psb := pubsub.NewMemoryPubSubBackend()
 	smb := secretmanager.NewMemorySecretManagerBackend()
-	mux := router.New(b, psb, smb, nil, nil, "test-project")
+	mux := router.New(b, psb, smb, nil, nil, nil, "test-project")
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	return srv

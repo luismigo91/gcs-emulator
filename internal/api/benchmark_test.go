@@ -15,7 +15,7 @@ import (
 func newBenchmarkHandler(b *testing.B) http.Handler {
 	b.Helper()
 	mem := backend.NewMemoryBackend()
-	return router.New(mem, nil, nil, nil, nil, "test-project")
+	return router.New(mem, nil, nil, nil, nil, nil, "test-project")
 }
 
 func BenchmarkBucketOperations(b *testing.B) {

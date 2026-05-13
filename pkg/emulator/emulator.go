@@ -14,6 +14,7 @@ import (
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/config"
 	pubsub "github.com/luismiguelgilolivert/gcs-emulator/internal/pubsub/backend"
 	secretmanager "github.com/luismiguelgilolivert/gcs-emulator/internal/secretmanager/backend"
+	logging "github.com/luismiguelgilolivert/gcs-emulator/internal/logging/backend"
 	emulatorrouter "github.com/luismiguelgilolivert/gcs-emulator/internal/router"
 )
 
@@ -22,6 +23,7 @@ type Server struct {
 	backend       backend.Backend
 	pubsub        pubsub.PubSubBackend
 	secretmanager secretmanager.SecretManagerBackend
+	logging       logging.LoggingBackend
 	server        *http.Server
 	testSrv       *httptest.Server
 	mu            sync.Mutex
@@ -78,6 +80,7 @@ func NewServer(cfg Config) (*Server, error) {
 		backend:       b,
 		pubsub:        psb,
 		secretmanager: secretmanager.NewMemorySecretManagerBackend(),
+		logging:       logging.NewMemoryLoggingBackend(),
 	}, nil
 }
 
@@ -89,7 +92,7 @@ func (s *Server) Start() error {
 		return fmt.Errorf("server is already running")
 	}
 
-	mux := emulatorrouter.New(s.backend, s.pubsub, s.secretmanager, nil, nil, s.config.DefaultProject)
+	mux := emulatorrouter.New(s.backend, s.pubsub, s.secretmanager, nil, nil, nil, s.config.DefaultProject)
 
 	addr := fmt.Sprintf(":%d", s.config.Port)
 	s.server = &http.Server{
@@ -163,7 +166,7 @@ func (s *Server) StartTestServer() error {
 		return fmt.Errorf("server is already running")
 	}
 
-	mux := emulatorrouter.New(s.backend, s.pubsub, s.secretmanager, nil, nil, s.config.DefaultProject)
+	mux := emulatorrouter.New(s.backend, s.pubsub, s.secretmanager, nil, nil, nil, s.config.DefaultProject)
 
 	s.testSrv = httptest.NewServer(mux)
 	s.running = true

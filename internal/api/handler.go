@@ -25,6 +25,7 @@ type Handler struct {
 	PubSub         pubsub.PubSubBackend
 	HasCloudTasks  bool
 	HasKMS         bool
+	HasLogging     bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +42,9 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasKMS {
 		services["kms"] = "available"
+	}
+	if h.HasLogging {
+		services["logging"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{

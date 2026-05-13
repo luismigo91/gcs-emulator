@@ -14,6 +14,7 @@ import (
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/config"
 	kms "github.com/luismiguelgilolivert/gcs-emulator/internal/kms/backend"
 	tasks "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudtasks/backend"
+	logging "github.com/luismiguelgilolivert/gcs-emulator/internal/logging/backend"
 	pubsub "github.com/luismiguelgilolivert/gcs-emulator/internal/pubsub/backend"
 	secretmanager "github.com/luismiguelgilolivert/gcs-emulator/internal/secretmanager/backend"
 	emulatorrouter "github.com/luismiguelgilolivert/gcs-emulator/internal/router"
@@ -57,7 +58,9 @@ func main() {
 
 	kmb := kms.NewMemoryKMSBackend()
 
-	mux := emulatorrouter.New(b, psb, smb, ctb, kmb, cfg.DefaultProject)
+	lb := logging.NewMemoryLoggingBackend()
+
+	mux := emulatorrouter.New(b, psb, smb, ctb, kmb, lb, cfg.DefaultProject)
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	srv := &http.Server{

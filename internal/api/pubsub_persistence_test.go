@@ -17,7 +17,7 @@ func TestPubSubPersistent_SurvivesRestart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create persistent: %v", err)
 	}
-	mux1 := router.New(nil, psb1, nil, nil, nil, "test-project")
+	mux1 := router.New(nil, psb1, nil, nil, nil, nil, "test-project")
 	srv1 := httptest.NewServer(mux1)
 
 	doRequest(t, srv1, http.MethodPut, "/v1/projects/test-project/topics/persist-topic", strings.NewReader(`{"name":"projects/test-project/topics/persist-topic"}`)).Body.Close()
@@ -30,7 +30,7 @@ func TestPubSubPersistent_SurvivesRestart(t *testing.T) {
 		t.Fatalf("Failed to recreate persistent: %v", err)
 	}
 	defer psb2.Shutdown()
-	mux2 := router.New(nil, psb2, nil, nil, nil, "test-project")
+	mux2 := router.New(nil, psb2, nil, nil, nil, nil, "test-project")
 	srv2 := httptest.NewServer(mux2)
 	defer srv2.Close()
 
@@ -48,7 +48,7 @@ func TestPubSubWAL_SurvivesRestart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create WAL: %v", err)
 	}
-	mux1 := router.New(nil, psb1, nil, nil, nil, "test-project")
+	mux1 := router.New(nil, psb1, nil, nil, nil, nil, "test-project")
 	srv1 := httptest.NewServer(mux1)
 
 	doRequest(t, srv1, http.MethodPut, "/v1/projects/test-project/topics/wal-topic", strings.NewReader(`{"name":"projects/test-project/topics/wal-topic"}`)).Body.Close()
@@ -60,7 +60,7 @@ func TestPubSubWAL_SurvivesRestart(t *testing.T) {
 		t.Fatalf("Failed to recreate WAL: %v", err)
 	}
 	defer psb2.Shutdown()
-	mux2 := router.New(nil, psb2, nil, nil, nil, "test-project")
+	mux2 := router.New(nil, psb2, nil, nil, nil, nil, "test-project")
 	srv2 := httptest.NewServer(mux2)
 	defer srv2.Close()
 

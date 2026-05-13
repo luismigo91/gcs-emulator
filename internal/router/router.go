@@ -16,10 +16,12 @@ import (
 	tasksbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudtasks/backend"
 	kmsapi "github.com/luismiguelgilolivert/gcs-emulator/internal/kms/api"
 	kmsbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/kms/backend"
+	loggingapi "github.com/luismiguelgilolivert/gcs-emulator/internal/logging/api"
+	loggingbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/logging/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
 )
 
-func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.SecretManagerBackend, ctb tasksbackend.CloudTasksBackend, kmb kmsbackend.KMSBackend, defaultProject string) http.Handler {
+func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.SecretManagerBackend, ctb tasksbackend.CloudTasksBackend, kmb kmsbackend.KMSBackend, lb loggingbackend.LoggingBackend, defaultProject string) http.Handler {
 	mux := http.NewServeMux()
 	h := &api.Handler{Backend: b, DefaultProject: defaultProject}
 	if psb != nil {
@@ -92,12 +94,21 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 		h.HasKMS = true
 	}
 
+	// --- Cloud Logging routes ---
+	if lb != nil {
+		lg := &loggingapi.Handler{Backend: lb}
+		mux.Handle("/v2/entries:write", lg)
+		mux.Handle("/-/logs", lg)
+		h.HasLogging = true
+	}
+
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}
 	if psb != nil { svcList = append(svcList, "pubsub") }
 	if smb != nil { svcList = append(svcList, "secretmanager") }
 	if ctb != nil { svcList = append(svcList, "cloudtasks") }
 	if kmb != nil { svcList = append(svcList, "kms") }
+	if lb != nil { svcList = append(svcList, "logging") }
 
 	mux.HandleFunc("/-/health", h.HealthHandler)
 	mux.HandleFunc("/-/", admin.DashboardHandler(svcList, func() map[string]interface{} {
