@@ -45,6 +45,7 @@ type Handler struct {
 	HasResourceManager  bool
 	HasAPIKeys          bool
 	HasServiceUsage     bool
+	HasWorkflows        bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -121,6 +122,9 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasServiceUsage {
 		services["serviceusage"] = "available"
+	}
+	if h.HasWorkflows {
+		services["workflows"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
