@@ -27,6 +27,7 @@ type MemoryBackend struct {
 	bucketACLs map[string][]*model.BucketACL
 	objectACLs map[string][]*model.ObjectACL
 	defaultObjectACLs map[string][]*model.ObjectACL
+	hmacKeys         map[string]*model.HMACKey
 	genCounter int64
 	blobDir string
 }
@@ -41,6 +42,7 @@ func NewMemoryBackend() *MemoryBackend {
 		bucketACLs: make(map[string][]*model.BucketACL),
 		objectACLs: make(map[string][]*model.ObjectACL),
 		defaultObjectACLs: make(map[string][]*model.ObjectACL),
+		hmacKeys:         make(map[string]*model.HMACKey),
 	}
 }
 
@@ -1023,6 +1025,65 @@ func (m *MemoryBackend) DeleteDefaultObjectACL(ctx context.Context, bucket, enti
 		}
 	}
 	return ErrObjectNotFound
+}
+
+func (m *MemoryBackend) CreateHMACKey(ctx context.Context, project, serviceAccountEmail string) (*model.HMACKey, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.genCounter++
+	id := m.genCounter
+	k := &model.HMACKey{
+		AccessID:             fmt.Sprintf("GOOG%d", id),
+		Secret:               fmt.Sprintf("secret%d", id),
+		ProjectID:            project,
+		ServiceAccountEmail:  serviceAccountEmail,
+		State:                "ACTIVE",
+	}
+	m.hmacKeys[k.AccessID] = k
+	return k, nil
+}
+
+func (m *MemoryBackend) ListHMACKeys(ctx context.Context, project string) ([]*model.HMACKey, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []*model.HMACKey
+	for _, k := range m.hmacKeys {
+		if k.ProjectID == project {
+			result = append(result, k)
+		}
+	}
+	return result, nil
+}
+
+func (m *MemoryBackend) GetHMACKey(ctx context.Context, accessID string) (*model.HMACKey, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	k, exists := m.hmacKeys[accessID]
+	if !exists {
+		return nil, ErrObjectNotFound
+	}
+	return k, nil
+}
+
+func (m *MemoryBackend) UpdateHMACKey(ctx context.Context, accessID string, state string) (*model.HMACKey, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	k, exists := m.hmacKeys[accessID]
+	if !exists {
+		return nil, ErrObjectNotFound
+	}
+	k.State = state
+	return k, nil
+}
+
+func (m *MemoryBackend) DeleteHMACKey(ctx context.Context, accessID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, exists := m.hmacKeys[accessID]; !exists {
+		return ErrObjectNotFound
+	}
+	delete(m.hmacKeys, accessID)
+	return nil
 }
 
 func (m *MemoryBackend) findLatestObject(bucket, name string) (*model.Object, error) {

@@ -1,0 +1,22 @@
+# GCP Emulator Configuration
+# All fields optional — defaults shown below
+
+port: 9090
+default_project: test-project
+
+storage:
+  mode: memory
+  path: ./data/gcs
+  flush_interval: 5s
+
+pubsub:
+  mode: memory
+  path: ./data/pubsub
+
+seed_path: /data
+
+# Per-service overrides (not yet implemented):
+# service_overrides:
+#   gcs:
+#     mode: wal
+#     path: /data/gcs

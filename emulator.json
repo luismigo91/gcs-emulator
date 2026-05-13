@@ -1,0 +1,12 @@
+# GCP Emulator Configuration
+# Copy this to emulator.json and customize
+
+{
+  "port": 9090,
+  "default_project": "test-project",
+  "storage": {
+    "mode": "memory",
+    "path": "./data/gcs",
+    "pubsub_path": "./data/pubsub"
+  }
+}

@@ -1868,6 +1868,44 @@ func (h *Handler) triggerNotification(r *http.Request, bucket, objectName, event
 	}
 }
 
+func (h *Handler) HMACHandler(w http.ResponseWriter, r *http.Request) {
+	project := util.GetProjectID(r)
+	accessID := r.PathValue("accessId")
+
+	switch r.Method {
+	case http.MethodPost:
+		var req struct{ ServiceAccountEmail string `json:"serviceAccountEmail"` }
+		json.NewDecoder(r.Body).Decode(&req)
+		key, err := h.Backend.CreateHMACKey(r.Context(), project, req.ServiceAccountEmail)
+		if err != nil { writeError(w, http.StatusInternalServerError, err.Error()); return }
+		writeJSON(w, http.StatusOK, key)
+	case http.MethodGet:
+		if accessID != "" {
+			key, err := h.Backend.GetHMACKey(r.Context(), accessID)
+			if err != nil { writeError(w, http.StatusNotFound, err.Error()); return }
+			writeJSON(w, http.StatusOK, key)
+		} else {
+			keys, err := h.Backend.ListHMACKeys(r.Context(), project)
+			if err != nil { writeError(w, http.StatusInternalServerError, err.Error()); return }
+			if keys == nil { keys = []*model.HMACKey{} }
+			writeJSON(w, http.StatusOK, map[string]interface{}{"kind": "storage#hmacKeys", "items": keys})
+		}
+	case http.MethodPut:
+		var req struct{ State string `json:"state"` }
+		json.NewDecoder(r.Body).Decode(&req)
+		key, err := h.Backend.UpdateHMACKey(r.Context(), accessID, req.State)
+		if err != nil { writeError(w, http.StatusInternalServerError, err.Error()); return }
+		writeJSON(w, http.StatusOK, key)
+	case http.MethodDelete:
+		if err := h.Backend.DeleteHMACKey(r.Context(), accessID); err != nil {
+			writeError(w, http.StatusNotFound, err.Error()); return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	default:
+		writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
+	}
+}
+
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

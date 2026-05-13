@@ -88,6 +88,10 @@ func NewWithConfig(cfg RouterConfig) http.Handler {
 	mux.HandleFunc("/storage/v1/b/{bucket}/o/{object}/acl/{entity}", h.ObjectACLHandler)
 	mux.HandleFunc("/storage/v1/b/{bucket}/website", h.WebsiteHandler)
 	mux.HandleFunc("/storage/v1/b/{bucket}/encryption", h.EncryptionHandler)
+
+	// HMAC keys routes
+	mux.HandleFunc("/storage/v1/projects/{project}/hmacKeys", h.HMACHandler)
+	mux.HandleFunc("/storage/v1/projects/{project}/hmacKeys/{accessId}", h.HMACHandler)
 	mux.HandleFunc("/storage/v1/b/{bucket}/defaultObjectAcl", h.DefaultObjectACLHandler)
 	mux.HandleFunc("/storage/v1/b/{bucket}/defaultObjectAcl/{entity}", h.DefaultObjectACLHandler)
 	mux.HandleFunc("/storage/v1/b/{bucket}/o", h.ObjectListHandler)

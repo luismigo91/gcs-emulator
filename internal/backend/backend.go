@@ -101,5 +101,11 @@ type Backend interface {
 	UpdateDefaultObjectACL(ctx context.Context, bucket, entity string, acl *model.ObjectACL) (*model.ObjectACL, error)
 	DeleteDefaultObjectACL(ctx context.Context, bucket, entity string) error
 
+	CreateHMACKey(ctx context.Context, project, serviceAccountEmail string) (*model.HMACKey, error)
+	ListHMACKeys(ctx context.Context, project string) ([]*model.HMACKey, error)
+	GetHMACKey(ctx context.Context, accessID string) (*model.HMACKey, error)
+	UpdateHMACKey(ctx context.Context, accessID string, state string) (*model.HMACKey, error)
+	DeleteHMACKey(ctx context.Context, accessID string) error
+
 	Shutdown() error
 }
