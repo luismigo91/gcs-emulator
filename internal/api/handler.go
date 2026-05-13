@@ -28,6 +28,7 @@ type Handler struct {
 	HasLogging      bool
 	HasMonitoring   bool
 	HasErrorReporting bool
+	HasScheduler      bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -53,6 +54,9 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasErrorReporting {
 		services["errorreporting"] = "available"
+	}
+	if h.HasScheduler {
+		services["scheduler"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{

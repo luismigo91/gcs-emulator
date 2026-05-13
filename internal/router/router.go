@@ -22,6 +22,8 @@ import (
 	errreportingbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/errorreporting/backend"
 	monitoringapi "github.com/luismiguelgilolivert/gcs-emulator/internal/monitoring/api"
 	monitoringbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/monitoring/backend"
+	schedulerapi "github.com/luismiguelgilolivert/gcs-emulator/internal/scheduler/api"
+	schedulerbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/scheduler/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
 )
 
@@ -120,6 +122,12 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	mux.Handle("/v1beta1/projects/", er)
 	mux.Handle("/-/errors", er)
 	h.HasErrorReporting = true
+
+	// --- Cloud Scheduler routes ---
+	sc := &schedulerapi.Handler{Backend: schedulerbackend.NewMemorySchedulerBackend()}
+	mux.Handle("/v1/projects/{project}/locations/{location}/jobs", sc)
+	mux.Handle("/v1/projects/{project}/locations/{location}/jobs/{job}", sc)
+	h.HasScheduler = true
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}
