@@ -46,6 +46,8 @@ import (
 	cdnbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/cdn/backend"
 	agapi "github.com/luismiguelgilolivert/gcs-emulator/internal/apigateway/api"
 	agbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/apigateway/backend"
+	cmapi "github.com/luismiguelgilolivert/gcs-emulator/internal/certificatemanager/api"
+	cmbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/certificatemanager/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
 )
 
@@ -223,6 +225,12 @@ func NewWithConfig(cfg RouterConfig) http.Handler {
 	mux.Handle("/v1/projects/{project}/locations/{location}/gateways/{gateway}", ag)
 	h.HasAPIGateway = true
 
+	// --- Certificate Manager routes ---
+	cm := &cmapi.Handler{Backend: cmbackend.NewMemoryCertManagerBackend()}
+	mux.Handle("/v1/projects/{project}/locations/{location}/certificates", cm)
+	mux.Handle("/v1/projects/{project}/locations/{location}/certificates/{certificate}", cm)
+	h.HasCertManager = true
+
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}
 	if cfg.PubSub != nil { svcList = append(svcList, "pubsub") }
@@ -231,7 +239,7 @@ func NewWithConfig(cfg RouterConfig) http.Handler {
 	if cfg.KMS != nil { svcList = append(svcList, "kms") }
 	if cfg.Logging != nil { svcList = append(svcList, "logging") }
 	if cfg.Monitoring != nil { svcList = append(svcList, "monitoring") }
-	svcList = append(svcList, "errorreporting", "scheduler", "iam", "trace", "bigquery", "dns", "artifactregistry", "cloudbuild", "billing", "cdn", "apigateway", "servicedirectory")
+	svcList = append(svcList, "errorreporting", "scheduler", "iam", "trace", "bigquery", "dns", "artifactregistry", "cloudbuild", "billing", "cdn", "apigateway", "certificatemanager", "servicedirectory")
 
 	mux.HandleFunc("/-/health", h.HealthHandler)
 	mux.HandleFunc("/-/", admin.DashboardHandler(svcList, func() map[string]interface{} {
