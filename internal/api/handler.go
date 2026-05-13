@@ -33,6 +33,7 @@ type Handler struct {
 	HasTrace          bool
 	HasBigQuery       bool
 	HasDNS            bool
+	HasArtifactRegistry bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -73,6 +74,9 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasDNS {
 		services["dns"] = "available"
+	}
+	if h.HasArtifactRegistry {
+		services["artifactregistry"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{

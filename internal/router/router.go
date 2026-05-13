@@ -32,6 +32,8 @@ import (
 	bqbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/bigquery/backend"
 	dnsapi "github.com/luismiguelgilolivert/gcs-emulator/internal/dns/api"
 	dnsbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/dns/backend"
+	arapi "github.com/luismiguelgilolivert/gcs-emulator/internal/artifactregistry/api"
+	arbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/artifactregistry/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
 )
 
@@ -158,6 +160,12 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	dn := &dnsapi.Handler{Backend: dnsbackend.NewMemoryDNSBackend()}
 	mux.Handle("/dns/v1/projects/", dn)
 	h.HasDNS = true
+
+	// --- Artifact Registry routes ---
+	ar := &arapi.Handler{Backend: arbackend.NewMemoryArtifactRegistryBackend()}
+	mux.Handle("/v1/projects/{project}/locations/{location}/repositories", ar)
+	mux.Handle("/v1/projects/{project}/locations/{location}/repositories/{repository}", ar)
+	h.HasArtifactRegistry = true
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}
