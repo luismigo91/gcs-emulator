@@ -27,6 +27,6 @@
 
 ## 5. Validation
 
-- [ ] 5.1 Push to trigger CI and verify all jobs pass
-- [ ] 5.2 Verify test job catches a deliberate failure
-- [ ] 5.3 Verify Docker build job works
+- [x] 5.1 Push to trigger CI and verify all jobs pass
+- [x] 5.2 Verify test job catches a deliberate failure
+- [x] 5.3 Verify Docker build job works

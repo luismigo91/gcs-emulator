@@ -95,7 +95,14 @@ func (s *Server) Start() error {
 		return fmt.Errorf("server is already running")
 	}
 
-	mux := emulatorrouter.New(s.backend, s.pubsub, s.secretmanager, nil, nil, s.logging, s.monitoring, s.config.DefaultProject)
+	mux := emulatorrouter.NewWithConfig(emulatorrouter.RouterConfig{
+		Backend:        s.backend,
+		PubSub:         s.pubsub,
+		SecretManager:  s.secretmanager,
+		Logging:        s.logging,
+		Monitoring:     s.monitoring,
+		DefaultProject: s.config.DefaultProject,
+	})
 
 	addr := fmt.Sprintf(":%d", s.config.Port)
 	s.server = &http.Server{
@@ -169,7 +176,14 @@ func (s *Server) StartTestServer() error {
 		return fmt.Errorf("server is already running")
 	}
 
-	mux := emulatorrouter.New(s.backend, s.pubsub, s.secretmanager, nil, nil, s.logging, s.monitoring, s.config.DefaultProject)
+	mux := emulatorrouter.NewWithConfig(emulatorrouter.RouterConfig{
+		Backend:        s.backend,
+		PubSub:         s.pubsub,
+		SecretManager:  s.secretmanager,
+		Logging:        s.logging,
+		Monitoring:     s.monitoring,
+		DefaultProject: s.config.DefaultProject,
+	})
 
 	s.testSrv = httptest.NewServer(mux)
 	s.running = true

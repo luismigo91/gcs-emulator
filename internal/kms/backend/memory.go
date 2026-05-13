@@ -66,6 +66,16 @@ func (m *MemoryKMSBackend) ListKeyRings(ctx context.Context, project, location s
 	return result, nil
 }
 
+func (m *MemoryKMSBackend) DeleteKeyRing(ctx context.Context, name string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, exists := m.keyRings[name]; !exists {
+		return ErrKeyRingNotFound
+	}
+	delete(m.keyRings, name)
+	return nil
+}
+
 func (m *MemoryKMSBackend) CreateCryptoKey(ctx context.Context, parent string, key *model.CryptoKey) (*model.CryptoKey, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

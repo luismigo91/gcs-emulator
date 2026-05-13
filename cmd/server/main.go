@@ -63,7 +63,16 @@ func main() {
 
 	mb := monitoring.NewMemoryMonitoringBackend()
 
-	mux := emulatorrouter.New(b, psb, smb, ctb, kmb, lb, mb, cfg.DefaultProject)
+	mux := emulatorrouter.NewWithConfig(emulatorrouter.RouterConfig{
+		Backend:        b,
+		PubSub:         psb,
+		SecretManager:  smb,
+		CloudTasks:     ctb,
+		KMS:            kmb,
+		Logging:        lb,
+		Monitoring:     mb,
+		DefaultProject: cfg.DefaultProject,
+	})
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	srv := &http.Server{

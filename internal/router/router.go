@@ -47,11 +47,22 @@ import (
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
 )
 
-func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.SecretManagerBackend, ctb tasksbackend.CloudTasksBackend, kmb kmsbackend.KMSBackend, lb loggingbackend.LoggingBackend, mb monitoringbackend.MonitoringBackend, defaultProject string) http.Handler {
+type RouterConfig struct {
+	Backend         backend.Backend
+	PubSub          pubsubbackend.PubSubBackend
+	SecretManager   secretbackend.SecretManagerBackend
+	CloudTasks      tasksbackend.CloudTasksBackend
+	KMS             kmsbackend.KMSBackend
+	Logging         loggingbackend.LoggingBackend
+	Monitoring      monitoringbackend.MonitoringBackend
+	DefaultProject  string
+}
+
+func NewWithConfig(cfg RouterConfig) http.Handler {
 	mux := http.NewServeMux()
-	h := &api.Handler{Backend: b, DefaultProject: defaultProject}
-	if psb != nil {
-		h.PubSub = psb
+	h := &api.Handler{Backend: cfg.Backend, DefaultProject: cfg.DefaultProject}
+	if cfg.PubSub != nil {
+		h.PubSub = cfg.PubSub
 	}
 	mc := metrics.NewCollector()
 	mc.SetObjectCountFunc(func() int64 { return 0 })
@@ -82,8 +93,8 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	mux.HandleFunc("/resumable/upload/storage/v1/b/{bucket}/o/{object...}", h.ResumableUploadHandler)
 
 	// --- Pub/Sub routes ---
-	if psb != nil {
-		ps := &pubsubapi.Handler{Backend: psb}
+	if cfg.PubSub != nil {
+		ps := &pubsubapi.Handler{Backend: cfg.PubSub}
 		mux.HandleFunc("/v1/projects/{project}/topics", ps.TopicHandler)
 		mux.HandleFunc("/v1/projects/{project}/topics/{topic}", ps.TopicHandler)
 		mux.HandleFunc("/v1/projects/{project}/subscriptions", ps.SubscriptionHandler)
@@ -95,8 +106,8 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	}
 
 	// --- Secret Manager routes ---
-	if smb != nil {
-		sm := &secretapi.Handler{Backend: smb}
+	if cfg.SecretManager != nil {
+		sm := &secretapi.Handler{Backend: cfg.SecretManager}
 		mux.HandleFunc("/v1/projects/{project}/secrets", sm.SecretsHandler)
 		mux.HandleFunc("/v1/projects/{project}/secrets/{secret}", sm.SecretsHandler)
 		mux.HandleFunc("/v1/projects/{project}/secrets/{secret}/versions", sm.SecretsHandler)
@@ -104,15 +115,15 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	}
 
 	// --- Cloud Tasks routes ---
-	if ctb != nil {
-		ct := &tasksapi.Handler{Backend: ctb}
+	if cfg.CloudTasks != nil {
+		ct := &tasksapi.Handler{Backend: cfg.CloudTasks}
 		mux.Handle("/v2/projects/", ct)
 		h.HasCloudTasks = true
 	}
 
 	// --- KMS routes ---
-	if kmb != nil {
-		km := &kmsapi.Handler{Backend: kmb}
+	if cfg.KMS != nil {
+		km := &kmsapi.Handler{Backend: cfg.KMS}
 		mux.Handle("/v1/projects/{project}/locations/{location}/keyRings", km)
 		mux.Handle("/v1/projects/{project}/locations/{location}/keyRings/{keyRing}", km)
 		mux.Handle("/v1/projects/{project}/locations/{location}/keyRings/{keyRing}/cryptoKeys", km)
@@ -123,16 +134,16 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	}
 
 	// --- Cloud Logging routes ---
-	if lb != nil {
-		lg := &loggingapi.Handler{Backend: lb}
+	if cfg.Logging != nil {
+		lg := &loggingapi.Handler{Backend: cfg.Logging}
 		mux.Handle("/v2/entries:write", lg)
 		mux.Handle("/-/logs", lg)
 		h.HasLogging = true
 	}
 
 	// --- Cloud Monitoring routes ---
-	if mb != nil {
-		mc := &monitoringapi.Handler{Backend: mb}
+	if cfg.Monitoring != nil {
+		mc := &monitoringapi.Handler{Backend: cfg.Monitoring}
 		mux.Handle("/v3/projects/", mc)
 		h.HasMonitoring = true
 	}
@@ -206,26 +217,26 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}
-	if psb != nil { svcList = append(svcList, "pubsub") }
-	if smb != nil { svcList = append(svcList, "secretmanager") }
-	if ctb != nil { svcList = append(svcList, "cloudtasks") }
-	if kmb != nil { svcList = append(svcList, "kms") }
-	if lb != nil { svcList = append(svcList, "logging") }
-	if mb != nil { svcList = append(svcList, "monitoring") }
+	if cfg.PubSub != nil { svcList = append(svcList, "pubsub") }
+	if cfg.SecretManager != nil { svcList = append(svcList, "secretmanager") }
+	if cfg.CloudTasks != nil { svcList = append(svcList, "cloudtasks") }
+	if cfg.KMS != nil { svcList = append(svcList, "kms") }
+	if cfg.Logging != nil { svcList = append(svcList, "logging") }
+	if cfg.Monitoring != nil { svcList = append(svcList, "monitoring") }
 
 	mux.HandleFunc("/-/health", h.HealthHandler)
 	mux.HandleFunc("/-/", admin.DashboardHandler(svcList, func() map[string]interface{} {
 		stats := map[string]interface{}{}
-		if b != nil {
-			buckets, _ := b.ListBuckets(nil, backend.ListBucketsParams{})
+		if cfg.Backend != nil {
+			buckets, _ := cfg.Backend.ListBuckets(nil, backend.ListBucketsParams{})
 			stats["Buckets"] = len(buckets)
 		}
-		if psb != nil {
-			topics, _, _ := psb.ListTopics(nil, defaultProject, 0, "")
+		if cfg.PubSub != nil {
+			topics, _, _ := cfg.PubSub.ListTopics(nil, cfg.DefaultProject, 0, "")
 			stats["PubSub Topics"] = len(topics)
 		}
-		if smb != nil {
-			secrets, _ := smb.ListSecrets(nil, defaultProject)
+		if cfg.SecretManager != nil {
+			secrets, _ := cfg.SecretManager.ListSecrets(nil, cfg.DefaultProject)
 			stats["Secrets"] = len(secrets)
 		}
 		return stats
@@ -237,7 +248,7 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	// XML API (catch-all, must be last)
 	mux.HandleFunc("/", h.XMLAPIHandler)
 
-	return mc.Middleware(corsMiddleware(projectMiddleware(mux, defaultProject)))
+	return mc.Middleware(corsMiddleware(projectMiddleware(mux, cfg.DefaultProject)))
 }
 
 func projectMiddleware(next http.Handler, defaultProject string) http.Handler {
@@ -267,4 +278,17 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 func GetProjectID(r *http.Request) string {
 	return util.GetProjectID(r)
+}
+
+func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.SecretManagerBackend, ctb tasksbackend.CloudTasksBackend, kmb kmsbackend.KMSBackend, lb loggingbackend.LoggingBackend, mb monitoringbackend.MonitoringBackend, defaultProject string) http.Handler {
+	return NewWithConfig(RouterConfig{
+		Backend:         b,
+		PubSub:          psb,
+		SecretManager:   smb,
+		CloudTasks:      ctb,
+		KMS:             kmb,
+		Logging:         lb,
+		Monitoring:      mb,
+		DefaultProject:  defaultProject,
+	})
 }

@@ -16,7 +16,7 @@ type Handler struct {
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/v1/")
 	parts := strings.Split(path, "/")
-	if len(parts) < 6 || parts[0] != "projects" || parts[2] != "locations" {
+	if len(parts) < 4 || parts[0] != "projects" || parts[2] != "locations" {
 		writeError(w, http.StatusBadRequest, "Invalid path")
 		return
 	}
@@ -97,6 +97,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			h.getKeyRing(w, r, krParent)
+		case http.MethodDelete:
+			h.deleteKeyRing(w, r, krParent)
 		default:
 			writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
@@ -106,8 +108,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) createKeyRing(w http.ResponseWriter, r *http.Request, parent string) {
+	parts := strings.Split(parent, "/")
+	project, location := parts[1], parts[3]
 	name := r.URL.Query().Get("keyRingId")
-	kr, err := h.Backend.CreateKeyRing(r.Context(), "", "", name)
+	kr, err := h.Backend.CreateKeyRing(r.Context(), project, location, name)
 	if err != nil {
 		writeError(w, http.StatusConflict, err.Error())
 		return
@@ -126,8 +130,17 @@ func (h *Handler) getKeyRing(w http.ResponseWriter, r *http.Request, name string
 }
 
 func (h *Handler) listKeyRings(w http.ResponseWriter, r *http.Request, parent string) {
-	krs, _ := h.Backend.ListKeyRings(r.Context(), "", "")
+	parts := strings.Split(parent, "/")
+	krs, _ := h.Backend.ListKeyRings(r.Context(), parts[1], parts[3])
 	writeJSON(w, http.StatusOK, map[string]interface{}{"keyRings": krs})
+}
+
+func (h *Handler) deleteKeyRing(w http.ResponseWriter, r *http.Request, name string) {
+	if err := h.Backend.DeleteKeyRing(r.Context(), name); err != nil {
+		writeError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) createCryptoKey(w http.ResponseWriter, r *http.Request, parent string) {

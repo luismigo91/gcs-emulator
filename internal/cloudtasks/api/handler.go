@@ -43,15 +43,15 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fullName := base + "/queues/" + queueName
 
 		if strings.HasSuffix(queueName, ":pause") {
-			h.pauseQueue(w, r, fullName)
+			h.pauseQueue(w, r, base+"/queues/"+strings.TrimSuffix(queueName, ":pause"))
 			return
 		}
 		if strings.HasSuffix(queueName, ":resume") {
-			h.resumeQueue(w, r, fullName)
+			h.resumeQueue(w, r, base+"/queues/"+strings.TrimSuffix(queueName, ":resume"))
 			return
 		}
 		if strings.HasSuffix(queueName, ":purge") {
-			h.purgeQueue(w, r, fullName)
+			h.purgeQueue(w, r, base+"/queues/"+strings.TrimSuffix(queueName, ":purge"))
 			return
 		}
 

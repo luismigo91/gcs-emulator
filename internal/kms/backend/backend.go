@@ -10,6 +10,7 @@ type KMSBackend interface {
 	CreateKeyRing(ctx context.Context, project, location, name string) (*model.KeyRing, error)
 	GetKeyRing(ctx context.Context, name string) (*model.KeyRing, error)
 	ListKeyRings(ctx context.Context, project, location string) ([]*model.KeyRing, error)
+	DeleteKeyRing(ctx context.Context, name string) error
 
 	CreateCryptoKey(ctx context.Context, parent string, key *model.CryptoKey) (*model.CryptoKey, error)
 	GetCryptoKey(ctx context.Context, name string) (*model.CryptoKey, error)

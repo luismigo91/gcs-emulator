@@ -58,7 +58,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-		if len(parts) == 2 && parts[1] == "queries" {
+		if len(parts) >= 3 && parts[2] == "queries" {
 			if r.Method == http.MethodPost { h.query(w, r, project) }
 			return
 		}
