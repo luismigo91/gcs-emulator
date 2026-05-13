@@ -34,6 +34,7 @@ type Handler struct {
 	HasBigQuery       bool
 	HasDNS            bool
 	HasArtifactRegistry bool
+	HasCloudBuild       bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -77,6 +78,9 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasArtifactRegistry {
 		services["artifactregistry"] = "available"
+	}
+	if h.HasCloudBuild {
+		services["cloudbuild"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{

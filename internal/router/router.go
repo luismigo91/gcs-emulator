@@ -34,6 +34,8 @@ import (
 	dnsbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/dns/backend"
 	arapi "github.com/luismiguelgilolivert/gcs-emulator/internal/artifactregistry/api"
 	arbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/artifactregistry/backend"
+	cbapi "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudbuild/api"
+	cbbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudbuild/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
 )
 
@@ -166,6 +168,12 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	mux.Handle("/v1/projects/{project}/locations/{location}/repositories", ar)
 	mux.Handle("/v1/projects/{project}/locations/{location}/repositories/{repository}", ar)
 	h.HasArtifactRegistry = true
+
+	// --- Cloud Build routes ---
+	cb := &cbapi.Handler{Backend: cbbackend.NewMemoryCloudBuildBackend()}
+	mux.Handle("/v1/projects/{project}/triggers", cb)
+	mux.Handle("/v1/projects/{project}/triggers/{trigger}", cb)
+	h.HasCloudBuild = true
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}
