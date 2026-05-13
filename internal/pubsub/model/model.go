@@ -93,3 +93,10 @@ type ValidateSchemaResponse struct {
 type CommitSchemaRequest struct {
 	Schema *Schema `json:"schema"`
 }
+
+type Snapshot struct {
+	Name         string    `json:"name"`
+	Topic        string    `json:"topic"`
+	Subscription string    `json:"subscription,omitempty"`
+	ExpireTime   time.Time `json:"expireTime,omitempty"`
+}

@@ -27,6 +27,7 @@ type Handler struct {
 	HasKMS          bool
 	HasLogging      bool
 	HasMonitoring   bool
+	HasErrorReporting bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -49,6 +50,9 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasMonitoring {
 		services["monitoring"] = "available"
+	}
+	if h.HasErrorReporting {
+		services["errorreporting"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{

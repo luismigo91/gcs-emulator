@@ -34,6 +34,7 @@ type MemoryPubSubBackend struct {
 	messages      map[string][]*queuedMessage
 	schemas       map[string]*model.Schema
 	schemaRevisions map[string][]*model.Schema
+	snapshots     map[string]*model.Snapshot
 	msgIDCounter  int64
 	ackIDCounter  int64
 }
@@ -45,6 +46,7 @@ func NewMemoryPubSubBackend() *MemoryPubSubBackend {
 		messages:        make(map[string][]*queuedMessage),
 		schemas:         make(map[string]*model.Schema),
 		schemaRevisions: make(map[string][]*model.Schema),
+		snapshots:       make(map[string]*model.Snapshot),
 	}
 }
 
@@ -425,6 +427,65 @@ func (m *MemoryPubSubBackend) CommitSchema(ctx context.Context, project, name st
 	m.schemas[key] = schema
 	m.schemaRevisions[key] = append(m.schemaRevisions[key], schema)
 	return schema, nil
+}
+
+func (m *MemoryPubSubBackend) CreateSnapshot(ctx context.Context, snapshot, subscription string) (*model.Snapshot, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if _, exists := m.subscriptions[snapshot]; exists {
+		return nil, errors.New("snapshot already exists")
+	}
+	sub, exists := m.subscriptions[subscription]
+	if !exists {
+		return nil, ErrSubscriptionNotFound
+	}
+
+	s := &model.Snapshot{
+		Name:         snapshot,
+		Topic:        sub.Topic,
+		Subscription: subscription,
+	}
+	m.snapshots[snapshot] = s
+	return s, nil
+}
+
+func (m *MemoryPubSubBackend) GetSnapshot(ctx context.Context, project, name string) (*model.Snapshot, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	key := "projects/" + project + "/snapshots/" + name
+	s, exists := m.snapshots[key]
+	if !exists {
+		return nil, errors.New("snapshot not found")
+	}
+	return s, nil
+}
+
+func (m *MemoryPubSubBackend) DeleteSnapshot(ctx context.Context, project, name string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	key := "projects/" + project + "/snapshots/" + name
+	if _, exists := m.snapshots[key]; !exists {
+		return errors.New("snapshot not found")
+	}
+	delete(m.snapshots, key)
+	return nil
+}
+
+func (m *MemoryPubSubBackend) Seek(ctx context.Context, project, subscription string, snapshot string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	key := subscriptionKey(project, subscription)
+	if _, exists := m.subscriptions[key]; !exists {
+		return ErrSubscriptionNotFound
+	}
+	snapshotKey := "projects/" + project + "/snapshots/" + snapshot
+	if _, exists := m.snapshots[snapshotKey]; !exists {
+		return errors.New("snapshot not found")
+	}
+	m.messages[key] = make([]*queuedMessage, 0)
+	return nil
 }
 
 func (m *MemoryPubSubBackend) Shutdown() error {

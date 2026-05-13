@@ -448,6 +448,78 @@ func (h *Handler) commitSchema(w http.ResponseWriter, r *http.Request, project, 
 	writeJSON(w, http.StatusOK, result)
 }
 
+func (h *Handler) SnapshotHandler(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/v1/")
+	parts := strings.Split(path, "/")
+	if len(parts) < 4 || parts[0] != "projects" || parts[2] != "snapshots" {
+		writeError(w, http.StatusBadRequest, "Invalid path")
+		return
+	}
+	project := parts[1]
+	snapName := ""
+	if len(parts) >= 4 {
+		snapName = parts[3]
+	}
+	switch {
+	case snapName == "" && r.Method == http.MethodPost:
+		h.createSnapshot(w, r, project)
+	case snapName != "" && r.Method == http.MethodPut:
+		h.createSnapshotNamed(w, r, project, snapName)
+	case snapName != "" && r.Method == http.MethodGet:
+		h.getSnapshot(w, r, project, snapName)
+	case snapName != "" && r.Method == http.MethodDelete:
+		h.deleteSnapshot(w, r, project, snapName)
+	default:
+		writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
+	}
+}
+
+func (h *Handler) createSnapshot(w http.ResponseWriter, r *http.Request, project string) {
+	var snap model.Snapshot
+	json.NewDecoder(r.Body).Decode(&snap)
+	if snap.Name == "" {
+		snap.Name = r.URL.Query().Get("snapshotId")
+	}
+	result, err := h.Backend.CreateSnapshot(r.Context(), snap.Name, snap.Subscription)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) createSnapshotNamed(w http.ResponseWriter, r *http.Request, project, name string) {
+	var snap model.Snapshot
+	json.NewDecoder(r.Body).Decode(&snap)
+	snap.Name = "projects/" + project + "/snapshots/" + name
+	if snap.Subscription == "" {
+		snap.Subscription = r.URL.Query().Get("subscription")
+	}
+	result, err := h.Backend.CreateSnapshot(r.Context(), snap.Name, snap.Subscription)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) getSnapshot(w http.ResponseWriter, r *http.Request, project, name string) {
+	s, err := h.Backend.GetSnapshot(r.Context(), project, name)
+	if err != nil {
+		writeError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, s)
+}
+
+func (h *Handler) deleteSnapshot(w http.ResponseWriter, r *http.Request, project, name string) {
+	if err := h.Backend.DeleteSnapshot(r.Context(), project, name); err != nil {
+		writeError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

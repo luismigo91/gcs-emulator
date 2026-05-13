@@ -18,6 +18,8 @@ import (
 	kmsbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/kms/backend"
 	loggingapi "github.com/luismiguelgilolivert/gcs-emulator/internal/logging/api"
 	loggingbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/logging/backend"
+	errreportingapi "github.com/luismiguelgilolivert/gcs-emulator/internal/errorreporting/api"
+	errreportingbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/errorreporting/backend"
 	monitoringapi "github.com/luismiguelgilolivert/gcs-emulator/internal/monitoring/api"
 	monitoringbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/monitoring/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
@@ -66,6 +68,8 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 		mux.HandleFunc("/v1/projects/{project}/subscriptions/{subscription}", ps.SubscriptionHandler)
 		mux.HandleFunc("/v1/projects/{project}/schemas", ps.SchemaHandler)
 		mux.HandleFunc("/v1/projects/{project}/schemas/{schema}", ps.SchemaHandler)
+		mux.HandleFunc("/v1/projects/{project}/snapshots", ps.SnapshotHandler)
+		mux.HandleFunc("/v1/projects/{project}/snapshots/{snapshot}", ps.SnapshotHandler)
 	}
 
 	// --- Secret Manager routes ---
@@ -110,6 +114,12 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 		mux.Handle("/v3/projects/", mc)
 		h.HasMonitoring = true
 	}
+
+	// --- Error Reporting routes ---
+	er := &errreportingapi.Handler{Backend: errreportingbackend.NewMemoryErrorReportingBackend()}
+	mux.Handle("/v1beta1/projects/", er)
+	mux.Handle("/-/errors", er)
+	h.HasErrorReporting = true
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}

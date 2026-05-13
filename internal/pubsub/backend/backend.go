@@ -23,6 +23,11 @@ type PubSubBackend interface {
 	Acknowledge(ctx context.Context, project, subscription string, ackIDs []string) error
 	ModifyAckDeadline(ctx context.Context, project, subscription string, ackIDs []string, seconds int) error
 
+	CreateSnapshot(ctx context.Context, snapshot, subscription string) (*model.Snapshot, error)
+	GetSnapshot(ctx context.Context, project, name string) (*model.Snapshot, error)
+	DeleteSnapshot(ctx context.Context, project, name string) error
+	Seek(ctx context.Context, project, subscription string, snapshot string) error
+
 	CreateSchema(ctx context.Context, schema *model.Schema) (*model.Schema, error)
 	GetSchema(ctx context.Context, project, name string) (*model.Schema, error)
 	ListSchemas(ctx context.Context, project string, pageSize int, pageToken string) ([]*model.Schema, string, error)
