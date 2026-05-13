@@ -36,6 +36,10 @@ import (
 	arbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/artifactregistry/backend"
 	cbapi "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudbuild/api"
 	cbbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudbuild/backend"
+	billingapi "github.com/luismiguelgilolivert/gcs-emulator/internal/billing/api"
+	billingbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/billing/backend"
+	assetapi "github.com/luismiguelgilolivert/gcs-emulator/internal/asset/api"
+	assetbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/asset/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
 )
 
@@ -174,6 +178,16 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	mux.Handle("/v1/projects/{project}/triggers", cb)
 	mux.Handle("/v1/projects/{project}/triggers/{trigger}", cb)
 	h.HasCloudBuild = true
+
+	// --- Cloud Billing routes ---
+	bl := &billingapi.Handler{Backend: billingbackend.NewMemoryBillingBackend()}
+	mux.Handle("/v1/billingAccounts/", bl)
+	h.HasBilling = true
+
+	// --- Cloud Asset Inventory routes ---
+	al := &assetapi.Handler{Backend: assetbackend.NewMemoryAssetBackend()}
+	mux.Handle("/v1/assets", al)
+	h.HasAssetInventory = true
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}
