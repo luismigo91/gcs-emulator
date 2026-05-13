@@ -56,6 +56,8 @@ import (
 	subackend "github.com/luismiguelgilolivert/gcs-emulator/internal/serviceusage/backend"
 	wfapi "github.com/luismiguelgilolivert/gcs-emulator/internal/workflows/api"
 	wfbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/workflows/backend"
+	evapi "github.com/luismiguelgilolivert/gcs-emulator/internal/eventarc/api"
+	evbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/eventarc/backend"
 	cmapi "github.com/luismiguelgilolivert/gcs-emulator/internal/certificatemanager/api"
 	cmbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/certificatemanager/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
@@ -274,6 +276,12 @@ func NewWithConfig(cfg RouterConfig) http.Handler {
 	mux.Handle("/v1/projects/{project}/locations/{location}/workflows", wf)
 	mux.Handle("/v1/projects/{project}/locations/{location}/workflows/{workflow}", wf)
 	h.HasWorkflows = true
+
+	// --- Eventarc routes ---
+	ev := &evapi.Handler{Backend: evbackend.NewMemoryEventarcBackend()}
+	mux.Handle("/v1/projects/{project}/locations/{location}/triggers", ev)
+	mux.Handle("/v1/projects/{project}/locations/{location}/triggers/{trigger}", ev)
+	h.HasEventarc = true
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}

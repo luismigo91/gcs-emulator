@@ -46,6 +46,7 @@ type Handler struct {
 	HasAPIKeys          bool
 	HasServiceUsage     bool
 	HasWorkflows        bool
+	HasEventarc         bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -125,6 +126,9 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasWorkflows {
 		services["workflows"] = "available"
+	}
+	if h.HasEventarc {
+		services["eventarc"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
