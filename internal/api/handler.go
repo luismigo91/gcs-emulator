@@ -49,6 +49,9 @@ type Handler struct {
 	HasEventarc         bool
 	HasCloudRun         bool
 	HasPubSubLite       bool
+	HasCloudSQL         bool
+	HasMemorystore      bool
+	HasVPC              bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -137,6 +140,15 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasPubSubLite {
 		services["pubsublite"] = "available"
+	}
+	if h.HasCloudSQL {
+		services["cloudsql"] = "available"
+	}
+	if h.HasMemorystore {
+		services["memorystore"] = "available"
+	}
+	if h.HasVPC {
+		services["vpc"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{

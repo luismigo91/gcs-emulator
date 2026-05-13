@@ -62,6 +62,12 @@ import (
 	crunbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudrun/backend"
 	pliteapi "github.com/luismiguelgilolivert/gcs-emulator/internal/pubsublite/api"
 	plitebackend "github.com/luismiguelgilolivert/gcs-emulator/internal/pubsublite/backend"
+	csqlapi "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudsql/api"
+	csqlbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudsql/backend"
+	memapi "github.com/luismiguelgilolivert/gcs-emulator/internal/memorystore/api"
+	membackend "github.com/luismiguelgilolivert/gcs-emulator/internal/memorystore/backend"
+	vpcapi "github.com/luismiguelgilolivert/gcs-emulator/internal/vpc/api"
+	vpcbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/vpc/backend"
 	cmapi "github.com/luismiguelgilolivert/gcs-emulator/internal/certificatemanager/api"
 	cmbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/certificatemanager/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
@@ -298,6 +304,26 @@ func NewWithConfig(cfg RouterConfig) http.Handler {
 	mux.Handle("/v1/admin/projects/{project}/locations/{location}/topics", pl)
 	mux.Handle("/v1/admin/projects/{project}/locations/{location}/topics/{topic}", pl)
 	h.HasPubSubLite = true
+
+	// --- Cloud SQL routes ---
+	cs := &csqlapi.Handler{Backend: csqlbackend.New()}
+	mux.Handle("/v1/projects/{project}/instances", cs)
+	mux.Handle("/v1/projects/{project}/instances/{instance}", cs)
+	h.HasCloudSQL = true
+
+	// --- Memorystore routes ---
+	mm := &memapi.H{BE: membackend.New()}
+	mux.Handle("/v1/projects/{project}/locations/{location}/instances", mm)
+	mux.Handle("/v1/projects/{project}/locations/{location}/instances/{instance}", mm)
+	h.HasMemorystore = true
+
+	// --- VPC routes ---
+	vp := &vpcapi.H{BE: vpcbackend.New()}
+	mux.Handle("/compute/v1/projects/{project}/global/networks", vp)
+	mux.Handle("/compute/v1/projects/{project}/global/networks/{network}", vp)
+	mux.Handle("/compute/v1/projects/{project}/regions/{region}/subnetworks", vp)
+	mux.Handle("/compute/v1/projects/{project}/regions/{region}/subnetworks/{subnetwork}", vp)
+	h.HasVPC = true
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}
