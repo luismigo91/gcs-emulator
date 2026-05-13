@@ -26,6 +26,8 @@ import (
 	schedulerbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/scheduler/backend"
 	iamapi "github.com/luismiguelgilolivert/gcs-emulator/internal/iam/api"
 	iambackend "github.com/luismiguelgilolivert/gcs-emulator/internal/iam/backend"
+	traceapi "github.com/luismiguelgilolivert/gcs-emulator/internal/trace/api"
+	tracebackend "github.com/luismiguelgilolivert/gcs-emulator/internal/trace/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
 )
 
@@ -136,6 +138,12 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	mux.Handle("/v1/projects/{project}/serviceAccounts", ia)
 	mux.Handle("/v1/projects/{project}/serviceAccounts/{serviceAccount}", ia)
 	h.HasIAM = true
+
+	// --- Cloud Trace routes ---
+	tr := &traceapi.Handler{Backend: tracebackend.NewMemoryTraceBackend()}
+	mux.Handle("/v2/traces:batchWrite", tr)
+	mux.Handle("/-/traces", tr)
+	h.HasTrace = true
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}

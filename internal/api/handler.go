@@ -30,6 +30,7 @@ type Handler struct {
 	HasErrorReporting bool
 	HasScheduler      bool
 	HasIAM            bool
+	HasTrace          bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -61,6 +62,9 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasIAM {
 		services["iam"] = "available"
+	}
+	if h.HasTrace {
+		services["trace"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
