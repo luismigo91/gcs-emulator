@@ -15,6 +15,14 @@ A lightweight, zero-dependency **multi-service GCP emulator** for local developm
 | **Secret Manager** | `/v1/projects/{p}/secrets/` | Secrets CRUD, versions, access, lifecycle |
 | **Cloud Tasks** | `/v2/projects/{p}/locations/{l}/queues/` | Queues CRUD, tasks, auto HTTP dispatch |
 | **Cloud KMS** | `/v1/projects/{p}/locations/{l}/keyRings/` | Key rings, crypto keys, versions, encrypt/decrypt |
+| **Cloud Logging** | `/v2/entries:write` | Write + list log entries |
+| **Cloud Monitoring** | `/v3/projects/{p}/timeSeries` | Time series ingest + query |
+| **Error Reporting** | `/v1beta1/projects/{p}/events:report` | Report + list errors |
+| **Cloud Scheduler** | `/v1/projects/{p}/locations/{l}/jobs` | Cron jobs with HTTP + Pub/Sub targets |
+| **IAM** | `/v1/projects/{p}/serviceAccounts` | Service accounts, signJWT, access tokens |
+| **Cloud Trace** | `/v2/traces:batchWrite` | Span ingestion + trace query |
+| **BigQuery** | `/bigquery/v2/projects/{p}/datasets` | Datasets, tables, SQL SELECT with WHERE/LIMIT |
+| **Cloud DNS** | `/dns/v1/projects/{p}/managedZones` | Managed zones + record sets |
 
 ## Quick Start
 

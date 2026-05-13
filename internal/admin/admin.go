@@ -57,7 +57,7 @@ footer{text-align:center;padding:20px;color:#555;font-size:11px}
 </style>
 </head>
 <body>
-<header><h1>GCP Emulator</h1><span class="version">v0.1.0</span></header>
+<header><h1>GCP Emulator</h1><span class="version">v0.2.0</span></header>
 <main>
 <div class="card">
 <h2>Services</h2>

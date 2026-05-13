@@ -78,7 +78,7 @@ func main() {
 		log.Printf("Storage path: %s", cfg.StoragePath)
 		log.Printf("Seed path: %s", seedPath)
 		log.Printf("Pub/Sub mode: %s", pubsubMode)
-		log.Printf("Services: gcs, pubsub, secretmanager, cloudtasks, kms")
+		log.Printf("Services: gcs, pubsub, secretmanager, cloudtasks, kms, logging, monitoring, errorreporting, scheduler, iam, trace, bigquery, dns")
 
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed: %v", err)
