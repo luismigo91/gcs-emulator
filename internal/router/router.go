@@ -40,6 +40,8 @@ import (
 	billingbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/billing/backend"
 	assetapi "github.com/luismiguelgilolivert/gcs-emulator/internal/asset/api"
 	assetbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/asset/backend"
+	sdapi "github.com/luismiguelgilolivert/gcs-emulator/internal/servicedirectory/api"
+	sdbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/servicedirectory/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
 )
 
@@ -188,6 +190,12 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	al := &assetapi.Handler{Backend: assetbackend.NewMemoryAssetBackend()}
 	mux.Handle("/v1/assets", al)
 	h.HasAssetInventory = true
+
+	// --- Service Directory routes ---
+	sd := &sdapi.Handler{Backend: sdbackend.NewMemoryServiceDirectoryBackend()}
+	mux.Handle("/v1/projects/{project}/locations/{location}/namespaces", sd)
+	mux.Handle("/v1/projects/{project}/locations/{location}/namespaces/{namespace}", sd)
+	h.HasServiceDirectory = true
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}

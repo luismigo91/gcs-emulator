@@ -37,6 +37,7 @@ type Handler struct {
 	HasCloudBuild       bool
 	HasBilling          bool
 	HasAssetInventory   bool
+	HasServiceDirectory bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -89,6 +90,9 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasAssetInventory {
 		services["asset"] = "available"
+	}
+	if h.HasServiceDirectory {
+		services["servicedirectory"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
