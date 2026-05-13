@@ -178,11 +178,40 @@ func executeQuery(sql string, tables map[string]*storedTable) (*model.QueryRespo
 		}
 	}
 
+	// Parse ORDER BY
+	orderByCol := ""
+	orderByDesc := false
+	orderByIdx := strings.Index(strings.ToUpper(rest), " ORDER BY ")
+	if orderByIdx >= 0 {
+		col := strings.TrimSpace(rest[orderByIdx+10:])
+		col = strings.SplitN(col, " ", 3)[0]
+		col = strings.TrimSuffix(col, ";")
+		orderByCol = col
+		restAfter := strings.ToUpper(rest[orderByIdx+10:])
+		if strings.Contains(restAfter, " DESC") {
+			orderByDesc = true
+		}
+	}
+
+	// Parse GROUP BY (basic: just COUNT support)
+	groupByCol := ""
+	groupByIdx := strings.Index(strings.ToUpper(rest), " GROUP BY ")
+	if groupByIdx >= 0 {
+		col := strings.TrimSpace(rest[groupByIdx+10:])
+		col = strings.SplitN(col, " ", 3)[0]
+		col = strings.TrimSuffix(col, ";")
+		groupByCol = col
+	}
+
 	tableName := rest
 	if whereIdx >= 0 {
 		tableName = strings.TrimSpace(rest[:whereIdx])
 	} else if limitIdx >= 0 {
 		tableName = strings.TrimSpace(rest[:limitIdx])
+	} else if orderByIdx >= 0 {
+		tableName = strings.TrimSpace(rest[:orderByIdx])
+	} else if groupByIdx >= 0 {
+		tableName = strings.TrimSpace(rest[:groupByIdx])
 	}
 	tableName = strings.TrimSuffix(tableName, ";")
 	tableName = strings.TrimSpace(tableName)
@@ -231,6 +260,37 @@ func executeQuery(sql string, tables map[string]*storedTable) (*model.QueryRespo
 	for _, row := range t.rows {
 		if matchWhere(row, schema.Fields, whereClause) {
 			filteredRows = append(filteredRows, row)
+		}
+	}
+
+	// Apply ORDER BY
+	if orderByCol != "" {
+		sort.Slice(filteredRows, func(i, j int) bool {
+			vi := rowValue(filteredRows[i], schema.Fields, orderByCol)
+			vj := rowValue(filteredRows[j], schema.Fields, orderByCol)
+			if orderByDesc { return compareValues(vi, vj) > 0 }
+			return compareValues(vi, vj) < 0
+		})
+	}
+
+	// Apply GROUP BY with COUNT(*)
+	if groupByCol != "" && strings.Contains(strings.ToUpper(selectPart), "COUNT") {
+		grouped := make(map[string]int)
+		groupIdx := -1
+		for fi, f := range schema.Fields {
+			if strings.EqualFold(f.Name, groupByCol) { groupIdx = fi; break }
+		}
+		if groupIdx >= 0 {
+			for _, row := range filteredRows {
+				key := fmt.Sprintf("%v", row[groupIdx])
+				grouped[key]++
+			}
+			colNames = []string{groupByCol, "count"}
+			selectedCols = []int{groupIdx, -1}
+			filteredRows = nil
+			for key, cnt := range grouped {
+				filteredRows = append(filteredRows, []interface{}{key, cnt})
+			}
 		}
 	}
 
@@ -316,6 +376,24 @@ func toFloat(v interface{}) float64 {
 		return f
 	}
 	return 0
+}
+
+func rowValue(row []interface{}, fields []*model.Field, colName string) interface{} {
+	for i, f := range fields {
+		if strings.EqualFold(f.Name, colName) && i < len(row) {
+			return row[i]
+		}
+	}
+	return nil
+}
+
+func compareValues(a, b interface{}) int {
+	if a == nil && b == nil { return 0 }
+	if a == nil { return -1 }
+	if b == nil { return 1 }
+	sa := fmt.Sprintf("%v", a)
+	sb := fmt.Sprintf("%v", b)
+	return strings.Compare(sa, sb)
 }
 
 func (m *MemoryBigQueryBackend) Shutdown() error { return nil }
