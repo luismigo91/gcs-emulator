@@ -42,6 +42,8 @@ import (
 	assetbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/asset/backend"
 	sdapi "github.com/luismiguelgilolivert/gcs-emulator/internal/servicedirectory/api"
 	sdbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/servicedirectory/backend"
+	cdnapi "github.com/luismiguelgilolivert/gcs-emulator/internal/cdn/api"
+	cdnbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/cdn/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
 )
 
@@ -196,6 +198,11 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	mux.Handle("/v1/projects/{project}/locations/{location}/namespaces", sd)
 	mux.Handle("/v1/projects/{project}/locations/{location}/namespaces/{namespace}", sd)
 	h.HasServiceDirectory = true
+
+	// --- Cloud CDN routes ---
+	cdn := &cdnapi.Handler{Backend: cdnbackend.NewMemoryCDNBackend()}
+	mux.Handle("/compute/v1/projects/", cdn)
+	h.HasCDN = true
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}
