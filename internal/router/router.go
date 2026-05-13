@@ -30,6 +30,8 @@ import (
 	tracebackend "github.com/luismiguelgilolivert/gcs-emulator/internal/trace/backend"
 	bqapi "github.com/luismiguelgilolivert/gcs-emulator/internal/bigquery/api"
 	bqbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/bigquery/backend"
+	dnsapi "github.com/luismiguelgilolivert/gcs-emulator/internal/dns/api"
+	dnsbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/dns/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
 )
 
@@ -151,6 +153,11 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	bq := &bqapi.Handler{Backend: bqbackend.NewMemoryBigQueryBackend()}
 	mux.Handle("/bigquery/v2/projects/", bq)
 	h.HasBigQuery = true
+
+	// --- Cloud DNS routes ---
+	dn := &dnsapi.Handler{Backend: dnsbackend.NewMemoryDNSBackend()}
+	mux.Handle("/dns/v1/projects/", dn)
+	h.HasDNS = true
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}
