@@ -48,6 +48,8 @@ import (
 	agbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/apigateway/backend"
 	cfapi "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudfunctions/api"
 	cfbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudfunctions/backend"
+	rmapi "github.com/luismiguelgilolivert/gcs-emulator/internal/resourcemanager/api"
+	rmbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/resourcemanager/backend"
 	cmapi "github.com/luismiguelgilolivert/gcs-emulator/internal/certificatemanager/api"
 	cmbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/certificatemanager/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
@@ -101,6 +103,12 @@ func NewWithConfig(cfg RouterConfig) http.Handler {
 	mux.HandleFunc("/upload/storage/v1/b/{bucket}/o", h.UploadHandler)
 	mux.HandleFunc("/resumable/upload/storage/v1/b/{bucket}/o", h.ResumableUploadHandler)
 	mux.HandleFunc("/resumable/upload/storage/v1/b/{bucket}/o/{object...}", h.ResumableUploadHandler)
+
+	// --- Resource Manager routes (must be before specific /v1/projects/* patterns) ---
+	rm := &rmapi.Handler{Backend: rmbackend.NewMemoryResourceManagerBackend()}
+	mux.Handle("/v1/projects", rm)
+	mux.Handle("/v1/projects/{project}", rm)
+	h.HasResourceManager = true
 
 	// --- Pub/Sub routes ---
 	if cfg.PubSub != nil {

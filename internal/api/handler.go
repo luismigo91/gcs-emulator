@@ -42,6 +42,7 @@ type Handler struct {
 	HasAPIGateway       bool
 	HasCertManager      bool
 	HasCloudFunctions   bool
+	HasResourceManager  bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -109,6 +110,9 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasCloudFunctions {
 		services["cloudfunctions"] = "available"
+	}
+	if h.HasResourceManager {
+		services["resourcemanager"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
