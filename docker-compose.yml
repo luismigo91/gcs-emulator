@@ -1,0 +1,21 @@
+services:
+  gcs-emulator:
+    build: .
+    ports:
+      - "9090:9090"
+    environment:
+      - GCP_EMULATOR_PORT=9090
+      - GCP_EMULATOR_DEFAULT_PROJECT=test-project
+      - GCP_EMULATOR_STORAGE_MODE=hybrid
+      - GCP_EMULATOR_STORAGE_PATH=/data
+    volumes:
+      - gcs-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  gcs-data:

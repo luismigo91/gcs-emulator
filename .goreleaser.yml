@@ -1,0 +1,34 @@
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+    main: ./cmd/server
+    binary: gcs-emulator
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+brews:
+  - name: gcs-emulator
+    homepage: https://github.com/luismiguelgilolivert/gcs-emulator
+    description: Lightweight multi-service GCP emulator (GCS, Pub/Sub, Secret Manager, Cloud Tasks, KMS)
+    license: MIT
+    repository:
+      owner: luismiguelgilolivert
+      name: homebrew-tap

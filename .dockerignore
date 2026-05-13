@@ -1,0 +1,17 @@
+.git
+.github
+.gitignore
+.agents
+.opencode
+openspec
+.vscode
+.idea
+*.md
+LICENSE
+Makefile
+docker-compose.yml
+tests
+data
+*.log
+.env
+.env.*

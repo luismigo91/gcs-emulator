@@ -1,0 +1,7 @@
+{
+  "name": "gcs-emulator-sdk-tests",
+  "private": true,
+  "dependencies": {
+    "@google-cloud/storage": "^7.0.0"
+  }
+}

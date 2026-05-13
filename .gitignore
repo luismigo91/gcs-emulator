@@ -1,0 +1,46 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+gcs-emulator
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.txt
+
+# Dependency directories
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data directory for persistent storage
+data/
+
+# WAL files
+*.wal
+*.wal.lock
+
+# Docker
+.dockerenv
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
