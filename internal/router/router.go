@@ -68,6 +68,12 @@ import (
 	membackend "github.com/luismiguelgilolivert/gcs-emulator/internal/memorystore/backend"
 	vpcapi "github.com/luismiguelgilolivert/gcs-emulator/internal/vpc/api"
 	vpcbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/vpc/backend"
+	armorapi "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudarmor/api"
+	armorbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudarmor/backend"
+	deployapi "github.com/luismiguelgilolivert/gcs-emulator/internal/clouddeploy/api"
+	deploybackend "github.com/luismiguelgilolivert/gcs-emulator/internal/clouddeploy/backend"
+	routerapi "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudrouter/api"
+	routerbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudrouter/backend"
 	cmapi "github.com/luismiguelgilolivert/gcs-emulator/internal/certificatemanager/api"
 	cmbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/certificatemanager/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
@@ -325,6 +331,25 @@ func NewWithConfig(cfg RouterConfig) http.Handler {
 	mux.Handle("/compute/v1/projects/{project}/regions/{region}/subnetworks/{subnetwork}", vp)
 	h.HasVPC = true
 
+	// --- Cloud Armor routes ---
+	am := &armorapi.H{BE: armorbackend.New()}
+	mux.Handle("/compute/v1/projects/{project}/global/securityPolicies", am)
+	mux.Handle("/compute/v1/projects/{project}/global/securityPolicies/{policy}", am)
+	h.HasCloudArmor = true
+
+	// --- Cloud Deploy routes ---
+	dp := &deployapi.H{BE: deploybackend.New()}
+	mux.Handle("/v1/projects/{project}/locations/{location}/deliveryPipelines", dp)
+	mux.Handle("/v1/projects/{project}/locations/{location}/deliveryPipelines/{pipeline}", dp)
+	h.HasCloudDeploy = true
+
+	// --- Cloud Router routes ---
+	rt := &routerapi.H{BE: routerbackend.New()}
+	mux.Handle("/compute/v1/projects/{project}/regions/{region}/routers", rt)
+	mux.Handle("/compute/v1/projects/{project}/regions/{region}/routers/{router}", rt)
+	h.HasCloudRouter = true
+
+	// --- Filestore routes (skipped — conflicts with Memorystore path) ---
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}
 	if cfg.PubSub != nil { svcList = append(svcList, "pubsub") }

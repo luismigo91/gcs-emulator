@@ -52,6 +52,9 @@ type Handler struct {
 	HasCloudSQL         bool
 	HasMemorystore      bool
 	HasVPC              bool
+	HasCloudArmor       bool
+	HasCloudDeploy      bool
+	HasCloudRouter      bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -149,6 +152,15 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasVPC {
 		services["vpc"] = "available"
+	}
+	if h.HasCloudArmor {
+		services["armor"] = "available"
+	}
+	if h.HasCloudDeploy {
+		services["clouddeploy"] = "available"
+	}
+	if h.HasCloudRouter {
+		services["cloudrouter"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
