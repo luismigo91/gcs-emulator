@@ -28,6 +28,8 @@ import (
 	iambackend "github.com/luismiguelgilolivert/gcs-emulator/internal/iam/backend"
 	traceapi "github.com/luismiguelgilolivert/gcs-emulator/internal/trace/api"
 	tracebackend "github.com/luismiguelgilolivert/gcs-emulator/internal/trace/backend"
+	bqapi "github.com/luismiguelgilolivert/gcs-emulator/internal/bigquery/api"
+	bqbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/bigquery/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
 )
 
@@ -144,6 +146,11 @@ func New(b backend.Backend, psb pubsubbackend.PubSubBackend, smb secretbackend.S
 	mux.Handle("/v2/traces:batchWrite", tr)
 	mux.Handle("/-/traces", tr)
 	h.HasTrace = true
+
+	// --- BigQuery routes ---
+	bq := &bqapi.Handler{Backend: bqbackend.NewMemoryBigQueryBackend()}
+	mux.Handle("/bigquery/v2/projects/", bq)
+	h.HasBigQuery = true
 
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}

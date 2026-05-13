@@ -31,6 +31,7 @@ type Handler struct {
 	HasScheduler      bool
 	HasIAM            bool
 	HasTrace          bool
+	HasBigQuery       bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +66,9 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasTrace {
 		services["trace"] = "available"
+	}
+	if h.HasBigQuery {
+		services["bigquery"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
