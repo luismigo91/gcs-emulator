@@ -1,9 +1,13 @@
 package backend
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -126,9 +130,37 @@ func (m *MemoryPubSubBackend) DeleteTopic(ctx context.Context, project, name str
 
 func (m *MemoryPubSubBackend) Publish(ctx context.Context, project, topic string, messages []*model.PubSubMessage) ([]string, error) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
+	ids, err := m.publishLocked(project, topic, messages)
 
-	return m.publishLocked(project, topic, messages)
+	pushTargets := make(map[string]string)
+	for subKey, sub := range m.subscriptions {
+		if sub.Topic == topicKey(project, topic) && sub.PushConfig != nil && sub.PushConfig.PushEndpoint != "" {
+			pushTargets[subKey] = sub.PushConfig.PushEndpoint
+		}
+	}
+	m.mu.Unlock()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, msg := range messages {
+		pushBody, _ := json.Marshal(map[string]interface{}{
+			"message": map[string]interface{}{
+				"data":       base64.StdEncoding.EncodeToString(msg.Data),
+				"messageId":  msg.MessageID,
+				"attributes": msg.Attributes,
+			},
+			"subscription": "",
+		})
+		for _, endpoint := range pushTargets {
+			go func(ep string, body []byte) {
+				http.Post(ep, "application/json", bytes.NewReader(body))
+			}(endpoint, pushBody)
+		}
+	}
+
+	return ids, nil
 }
 
 func (m *MemoryPubSubBackend) publishLocked(project, topic string, messages []*model.PubSubMessage) ([]string, error) {
