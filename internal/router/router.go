@@ -58,6 +58,10 @@ import (
 	wfbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/workflows/backend"
 	evapi "github.com/luismiguelgilolivert/gcs-emulator/internal/eventarc/api"
 	evbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/eventarc/backend"
+	crunapi "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudrun/api"
+	crunbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/cloudrun/backend"
+	pliteapi "github.com/luismiguelgilolivert/gcs-emulator/internal/pubsublite/api"
+	plitebackend "github.com/luismiguelgilolivert/gcs-emulator/internal/pubsublite/backend"
 	cmapi "github.com/luismiguelgilolivert/gcs-emulator/internal/certificatemanager/api"
 	cmbackend "github.com/luismiguelgilolivert/gcs-emulator/internal/certificatemanager/backend"
 	"github.com/luismiguelgilolivert/gcs-emulator/internal/util"
@@ -283,6 +287,18 @@ func NewWithConfig(cfg RouterConfig) http.Handler {
 	mux.Handle("/v1/projects/{project}/locations/{location}/triggers/{trigger}", ev)
 	h.HasEventarc = true
 
+	// --- Cloud Run routes ---
+	cr := &crunapi.Handler{Backend: crunbackend.NewMemoryCloudRunBackend()}
+	mux.Handle("/v2/projects/{project}/locations/{location}/services", cr)
+	mux.Handle("/v2/projects/{project}/locations/{location}/services/{service}", cr)
+	h.HasCloudRun = true
+
+	// --- Pub/Sub Lite routes ---
+	pl := &pliteapi.Handler{Backend: plitebackend.NewMemoryPubSubLiteBackend()}
+	mux.Handle("/v1/admin/projects/{project}/locations/{location}/topics", pl)
+	mux.Handle("/v1/admin/projects/{project}/locations/{location}/topics/{topic}", pl)
+	h.HasPubSubLite = true
+
 	// --- Admin & Health ---
 	svcList := []string{"gcs"}
 	if cfg.PubSub != nil { svcList = append(svcList, "pubsub") }
@@ -291,7 +307,7 @@ func NewWithConfig(cfg RouterConfig) http.Handler {
 	if cfg.KMS != nil { svcList = append(svcList, "kms") }
 	if cfg.Logging != nil { svcList = append(svcList, "logging") }
 	if cfg.Monitoring != nil { svcList = append(svcList, "monitoring") }
-	svcList = append(svcList, "errorreporting", "scheduler", "iam", "trace", "bigquery", "dns", "artifactregistry", "cloudbuild", "billing", "cdn", "apigateway", "certificatemanager", "cloudfunctions", "resourcemanager", "apikeys", "serviceusage", "workflows", "servicedirectory")
+	svcList = append(svcList, "errorreporting", "scheduler", "iam", "trace", "bigquery", "dns", "artifactregistry", "cloudbuild", "billing", "cdn", "apigateway", "certificatemanager", "cloudfunctions", "resourcemanager", "apikeys", "serviceusage", "workflows", "eventarc", "cloudrun", "pubsublite", "servicedirectory")
 
 	mux.HandleFunc("/-/health", h.HealthHandler)
 	mux.HandleFunc("/-/", admin.DashboardHandler(svcList, func() map[string]interface{} {

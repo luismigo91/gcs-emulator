@@ -47,6 +47,8 @@ type Handler struct {
 	HasServiceUsage     bool
 	HasWorkflows        bool
 	HasEventarc         bool
+	HasCloudRun         bool
+	HasPubSubLite       bool
 }
 
 func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
@@ -129,6 +131,12 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.HasEventarc {
 		services["eventarc"] = "available"
+	}
+	if h.HasCloudRun {
+		services["cloudrun"] = "available"
+	}
+	if h.HasPubSubLite {
+		services["pubsublite"] = "available"
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
